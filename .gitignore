@@ -1,0 +1,23 @@
+# Backend
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/*.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Docker
+pgdata/
+
+# Guides (local only)
+PROJECT_GUIDE.md
+QueryMesh_Guide.md
+docs/
