@@ -36,33 +36,27 @@ This project was built to solve a real problem I encountered while working with 
 
 ## Screenshots
 
-### Live Demo — Animation
-![QueryMesh Demo Animation](screenshots/demo.webp)
-*Full interaction showing graph navigation, real-time violation scanning, and blast radius diagnosis.*
+## Screenshots
 
-### Dashboard — Full Dependency Graph
-![Dashboard - Dependency Graph](screenshots/dashboard-graph.png)
+### 1. Dashboard — Full Dependency Graph
+<!-- Place your image at: screenshots/1-dashboard.png -->
+![Dashboard - Full Dependency Graph](screenshots/1-dashboard.png)
 *The main dashboard displaying an interactive foreign key dependency graph. Each node represents a database table with metadata (row count, column count, index count). Edges represent FK constraints.*
 
-### Docker Compose — All Services Running
+### 2. Violation Scanner — Real-Time Results
+<!-- Place your image at: screenshots/2-scanner.png -->
+![Violation Scanner - Real-Time Results](screenshots/2-scanner.png)
+*The violation panel after completing a scan. The progress bar fills in real time as each table is scanned via WebSocket events. Each violation card shows the table name, column, orphaned row count, severity badge, and the referenced table.*
 
-```text
-$ docker compose up --build -d
-[+] Building 8.4s (31/31) FINISHED
-[+] Running 4/4
- ✔ Network querymesh_default  Created
- ✔ Container qm-postgres      Healthy
- ✔ Container qm-backend       Started
- ✔ Container qm-frontend      Started
+### 3. Blast Radius Diagnosis
+<!-- Place your image at: screenshots/3-diagnosis.png -->
+![Blast Radius Diagnosis](screenshots/3-diagnosis.png)
+*The diagnosis panel for the `orders` table. The blast radius of 7 means that modifying the `orders` table could impact 7 other tables. The dependency chain shows the outgoing FK path: orders references users, which references addresses.*
 
-$ docker compose ps
-NAME          IMAGE                COMMAND                  SERVICE    STATUS                    PORTS
-qm-backend    querymesh-backend    "java -jar app.jar"      backend    Up 10 seconds             0.0.0.0:8080->8080/tcp
-qm-frontend   querymesh-frontend   "/docker-entrypoint.…"   frontend   Up 9 seconds              0.0.0.0:3000->3000/tcp
-qm-postgres   postgres:15          "docker-entrypoint.s…"   postgres   Up 15 seconds (healthy)   0.0.0.0:5432->5432/tcp
-```
-
-*All three services running via Docker Compose: PostgreSQL 15 (healthy), Spring Boot backend on port 8080, and the React frontend served via nginx on port 3000.*
+### 4. Docker Deployment — Terminal Output
+<!-- Place your image at: screenshots/4-terminal.png -->
+![Docker Terminal Output](screenshots/4-terminal.png)
+*All three services running successfully via Docker Compose: PostgreSQL 15 (healthy), Spring Boot backend on port 8080, and the React frontend served via nginx on port 3000.*
 
 ---
 
