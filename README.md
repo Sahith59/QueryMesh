@@ -36,8 +36,6 @@ This project was built to solve a real problem I encountered while working with 
 
 ## Screenshots
 
-## Screenshots
-
 ### 1. Dashboard — Full Dependency Graph
 <!-- Place your image at: screenshots/1-dashboard.png -->
 ![Dashboard - Full Dependency Graph](screenshots/1-dashboard.png)
