@@ -37,23 +37,19 @@ This project was built to solve a real problem I encountered while working with 
 ## Screenshots
 
 ### 1. Dashboard — Full Dependency Graph
-<!-- Place your image at: screenshots/1-dashboard.png -->
-![Dashboard - Full Dependency Graph](screenshots/1-dashboard.png)
+*(Edit this README on GitHub and copy/paste your Dashboard screenshot here!)*
 *The main dashboard displaying an interactive foreign key dependency graph. Each node represents a database table with metadata (row count, column count, index count). Edges represent FK constraints.*
 
 ### 2. Violation Scanner — Real-Time Results
-<!-- Place your image at: screenshots/2-scanner.png -->
-![Violation Scanner - Real-Time Results](screenshots/2-scanner.png)
+*(Edit this README on GitHub and copy/paste your Scanner screenshot here!)*
 *The violation panel after completing a scan. The progress bar fills in real time as each table is scanned via WebSocket events. Each violation card shows the table name, column, orphaned row count, severity badge, and the referenced table.*
 
 ### 3. Blast Radius Diagnosis
-<!-- Place your image at: screenshots/3-diagnosis.png -->
-![Blast Radius Diagnosis](screenshots/3-diagnosis.png)
+*(Edit this README on GitHub and copy/paste your Diagnosis screenshot here!)*
 *The diagnosis panel for the `orders` table. The blast radius of 7 means that modifying the `orders` table could impact 7 other tables. The dependency chain shows the outgoing FK path: orders references users, which references addresses.*
 
 ### 4. Docker Deployment — Terminal Output
-<!-- Place your image at: screenshots/4-terminal.png -->
-![Docker Terminal Output](screenshots/4-terminal.png)
+*(Edit this README on GitHub and copy/paste your Terminal screenshot here!)*
 *All three services running successfully via Docker Compose: PostgreSQL 15 (healthy), Spring Boot backend on port 8080, and the React frontend served via nginx on port 3000.*
 
 ---
