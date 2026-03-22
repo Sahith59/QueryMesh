@@ -37,19 +37,23 @@ This project was built to solve a real problem I encountered while working with 
 ## Screenshots
 
 ### 1. Dashboard — Full Dependency Graph
-*(Edit this README on GitHub and copy/paste your Dashboard screenshot here!)*
+<img width="2557" height="1319" alt="image" src="https://github.com/user-attachments/assets/fba50029-6327-44b4-8965-dc19e32d44af" />
+
 *The main dashboard displaying an interactive foreign key dependency graph. Each node represents a database table with metadata (row count, column count, index count). Edges represent FK constraints.*
 
 ### 2. Violation Scanner — Real-Time Results
-*(Edit this README on GitHub and copy/paste your Scanner screenshot here!)*
+<img width="394" height="862" alt="image" src="https://github.com/user-attachments/assets/bb76a737-a995-47ae-bd3e-05bfa14ede13" />
+
 *The violation panel after completing a scan. The progress bar fills in real time as each table is scanned via WebSocket events. Each violation card shows the table name, column, orphaned row count, severity badge, and the referenced table.*
 
 ### 3. Blast Radius Diagnosis
-*(Edit this README on GitHub and copy/paste your Diagnosis screenshot here!)*
+<img width="2543" height="433" alt="image" src="https://github.com/user-attachments/assets/698c3a18-a88b-41be-be46-ce96820660e6" />
+
 *The diagnosis panel for the `orders` table. The blast radius of 7 means that modifying the `orders` table could impact 7 other tables. The dependency chain shows the outgoing FK path: orders references users, which references addresses.*
 
 ### 4. Docker Deployment — Terminal Output
-*(Edit this README on GitHub and copy/paste your Terminal screenshot here!)*
+<img width="1136" height="123" alt="image" src="https://github.com/user-attachments/assets/cac7bcf2-80ca-4cd8-95fd-1e2866360870" />
+
 *All three services running successfully via Docker Compose: PostgreSQL 15 (healthy), Spring Boot backend on port 8080, and the React frontend served via nginx on port 3000.*
 
 ---
