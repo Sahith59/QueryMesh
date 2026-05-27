@@ -1,4 +1,5 @@
 import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 import type { ScanProgressEvent, ViolationAlert } from '../types';
 
 export function createStompClient(
@@ -8,7 +9,8 @@ export function createStompClient(
   onDisconnect?: () => void
 ): Client {
   const client = new Client({
-    brokerURL: `ws://localhost:8080/ws`,
+    // SockJS handles WebSocket upgrade + polling fallback automatically
+    webSocketFactory: () => new SockJS('http://localhost:8080/ws-sockjs'),
     reconnectDelay: 5000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,

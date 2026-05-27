@@ -1,7 +1,6 @@
 package com.querymesh.service;
 
-import com.querymesh.model.DiagnoseResult;
-import com.querymesh.model.SchemaEdge;
+import com.querymesh.model.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -46,6 +45,130 @@ public class DiagnosticService {
                 .blastRadius(affectedTables.size())
                 .affectedTables(new ArrayList<>(affectedTables))
                 .build();
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Circular Dependency Detection (DFS / 3-colour)
+    // ──────────────────────────────────────────────────────────────────
+
+    public CircularDepsResult detectCircularDeps() {
+        List<SchemaEdge> allEdges = introspectionService.getAllForeignKeys();
+        List<SchemaNode>  allNodes = introspectionService.getAllTables();
+        List<String> tables = allNodes.stream().map(SchemaNode::getTableName).collect(Collectors.toList());
+
+        // Build adjacency list: node -> outgoing edges
+        Map<String, List<SchemaEdge>> adj = new HashMap<>();
+        for (String t : tables) adj.put(t, new ArrayList<>());
+        for (SchemaEdge e : allEdges) {
+            adj.computeIfAbsent(e.getFrom(), k -> new ArrayList<>()).add(e);
+        }
+
+        // 0 = WHITE (unvisited), 1 = GRAY (in current path), 2 = BLACK (done)
+        Map<String, Integer> color = new HashMap<>();
+        for (String t : tables) color.put(t, 0);
+
+        List<CycleInfo> cycles = new ArrayList<>();
+        Set<String> reportedCycleKeys = new HashSet<>();
+
+        for (String table : tables) {
+            if (color.get(table) == 0) {
+                Deque<String> path = new ArrayDeque<>();
+                dfs(table, adj, color, path, allEdges, cycles, reportedCycleKeys);
+            }
+        }
+
+        return CircularDepsResult.builder()
+                .hasCycles(!cycles.isEmpty())
+                .cycles(cycles)
+                .build();
+    }
+
+    private void dfs(String node,
+                     Map<String, List<SchemaEdge>> adj,
+                     Map<String, Integer> color,
+                     Deque<String> path,
+                     List<SchemaEdge> allEdges,
+                     List<CycleInfo> cycles,
+                     Set<String> reportedCycleKeys) {
+
+        color.put(node, 1); // GRAY
+        path.addLast(node);
+
+        for (SchemaEdge edge : adj.getOrDefault(node, Collections.emptyList())) {
+            String neighbor = edge.getTo();
+            int neighborColor = color.getOrDefault(neighbor, 0);
+
+            if (neighborColor == 1) {
+                // Back-edge found — extract cycle
+                extractCycle(neighbor, path, edge, allEdges, cycles, reportedCycleKeys);
+            } else if (neighborColor == 0) {
+                dfs(neighbor, adj, color, path, allEdges, cycles, reportedCycleKeys);
+            }
+        }
+
+        path.removeLast();
+        color.put(node, 2); // BLACK
+    }
+
+    private void extractCycle(String cycleStart,
+                               Deque<String> path,
+                               SchemaEdge closingEdge,
+                               List<SchemaEdge> allEdges,
+                               List<CycleInfo> cycles,
+                               Set<String> reportedCycleKeys) {
+
+        // Extract just the cycle portion from path
+        List<String> pathList = new ArrayList<>(path);
+        int startIdx = pathList.lastIndexOf(cycleStart);
+        if (startIdx < 0) return; // safety
+
+        List<String> cyclePath = new ArrayList<>(pathList.subList(startIdx, pathList.size()));
+        cyclePath.add(cycleStart); // close the loop
+
+        // Normalise: start from alphabetically smallest node to deduplicate
+        String minNode = cyclePath.subList(0, cyclePath.size() - 1)
+                .stream().min(Comparator.naturalOrder()).orElse(cycleStart);
+        int minIdx = cyclePath.indexOf(minNode);
+        List<String> normalised = new ArrayList<>();
+        for (int i = 0; i < cyclePath.size() - 1; i++) {
+            normalised.add(cyclePath.get((minIdx + i) % (cyclePath.size() - 1)));
+        }
+        normalised.add(normalised.get(0));
+
+        String key = String.join("->", normalised);
+        if (reportedCycleKeys.contains(key)) return;
+        reportedCycleKeys.add(key);
+
+        // Resolve edges for the cycle path
+        Map<String, SchemaEdge> edgeLookup = new HashMap<>();
+        for (SchemaEdge e : allEdges) {
+            edgeLookup.put(e.getFrom() + "|" + e.getTo(), e);
+        }
+
+        List<CycleEdge> cycleEdges = new ArrayList<>();
+        for (int i = 0; i < normalised.size() - 1; i++) {
+            String from = normalised.get(i);
+            String to   = normalised.get(i + 1);
+            SchemaEdge e = edgeLookup.get(from + "|" + to);
+            cycleEdges.add(CycleEdge.builder()
+                    .from(from)
+                    .to(to)
+                    .constraint(e != null ? e.getConstraintName() : "unknown")
+                    .build());
+        }
+
+        boolean isSelfRef = normalised.size() == 2 && normalised.get(0).equals(normalised.get(1));
+        String explanation = isSelfRef
+                ? "Self-referencing FK on \"" + cycleStart + "\". TRUNCATE requires DISABLE TRIGGER ALL."
+                : "Circular FK prevents safe TRUNCATE on any table in this cycle. "
+                  + "Cascade deletes may deadlock. Some ORMs reject this schema.";
+
+        cycles.add(CycleInfo.builder()
+                .path(normalised)
+                .edges(cycleEdges)
+                .riskLevel("HIGH")
+                .explanation(explanation)
+                .build());
     }
 
     /**

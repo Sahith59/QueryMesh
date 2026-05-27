@@ -5,6 +5,7 @@ import {
   Controls,
   Background,
   BackgroundVariant,
+  MarkerType,
   useNodesState,
   useEdgesState,
   type Node,
@@ -13,53 +14,57 @@ import {
 import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
 import TableNode from './TableNode';
+import CustomEdge from './CustomEdge';
+import { IconGrid } from './Icons';
 import type { SchemaGraph, ViolationResult } from '../types';
 
-const NODE_WIDTH = 200;
-const NODE_HEIGHT = 140;
+const NODE_WIDTH  = 200;
+const NODE_HEIGHT = 135;
 
 const nodeTypes = { tableNode: TableNode };
+const edgeTypes = { custom: CustomEdge };
 
-function getLayoutedElements(
-  nodes: Node[],
-  edges: Edge[],
-  direction = 'TB'
-) {
-  const dagreGraph = new dagre.graphlib.Graph();
-  dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ rankdir: direction, nodesep: 80, ranksep: 100 });
+function getLayoutedElements(nodes: Node[], edges: Edge[], direction = 'TB') {
+  const g = new dagre.graphlib.Graph();
+  g.setDefaultEdgeLabel(() => ({}));
+  // Generous spacing so nodes never overlap
+  g.setGraph({ rankdir: direction, nodesep: 100, ranksep: 130, edgesep: 50 });
 
-  nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
-  });
+  nodes.forEach((n) => g.setNode(n.id, { width: NODE_WIDTH, height: NODE_HEIGHT }));
+  edges.forEach((e) => g.setEdge(e.source, e.target));
 
-  edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target);
-  });
+  dagre.layout(g);
 
-  dagre.layout(dagreGraph);
-
-  const layoutedNodes = nodes.map((node) => {
-    const nodeWithPosition = dagreGraph.node(node.id);
-    return {
-      ...node,
-      position: {
-        x: nodeWithPosition.x - NODE_WIDTH / 2,
-        y: nodeWithPosition.y - NODE_HEIGHT / 2,
-      },
-    };
-  });
-
-  return { nodes: layoutedNodes, edges };
+  return {
+    nodes: nodes.map((n) => {
+      const pos = g.node(n.id);
+      return { ...n, position: { x: pos.x - NODE_WIDTH / 2, y: pos.y - NODE_HEIGHT / 2 } };
+    }),
+    edges,
+  };
 }
 
 interface DependencyGraphProps {
   graph: SchemaGraph | null;
   violations: ViolationResult[];
+  indexGapTables?: Set<string>;
+  cycleEdgePairs?: Set<string>;
+  cycleNodeSet?: Set<string>;
   onNodeClick?: (tableName: string) => void;
+  selectedNodeId?: string;
+  isLoading?: boolean;
 }
 
-export default function DependencyGraph({ graph, violations, onNodeClick }: DependencyGraphProps) {
+export default function DependencyGraph({
+  graph,
+  violations,
+  indexGapTables = new Set(),
+  cycleEdgePairs = new Set(),
+  cycleNodeSet = new Set(),
+  onNodeClick,
+  selectedNodeId,
+  isLoading,
+}: DependencyGraphProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
@@ -70,12 +75,9 @@ export default function DependencyGraph({ graph, violations, onNodeClick }: Depe
 
   const fkTables = useMemo(() => {
     if (!graph) return new Set<string>();
-    const tables = new Set<string>();
-    graph.edges.forEach((e) => {
-      tables.add(e.from);
-      tables.add(e.to);
-    });
-    return tables;
+    const s = new Set<string>();
+    graph.edges.forEach((e) => { s.add(e.from); s.add(e.to); });
+    return s;
   }, [graph]);
 
   useEffect(() => {
@@ -88,57 +90,92 @@ export default function DependencyGraph({ graph, violations, onNodeClick }: Depe
       data: {
         label: table.tableName,
         table,
-        hasViolation: violatedTables.has(table.tableName),
+        hasViolation:  violatedTables.has(table.tableName),
         hasForeignKeys: fkTables.has(table.tableName),
+        hasIndexGap:   indexGapTables.has(table.tableName),
+        isCycleNode:   cycleNodeSet.has(table.tableName),
+        isSelected:    table.tableName === selectedNodeId,
       },
     }));
 
-    const flowEdges: Edge[] = graph.edges.map((edge, i) => ({
-      id: `edge-${i}`,
-      source: edge.from,
-      target: edge.to,
-      label: edge.constraintName.replace(/_fkey$/, ''),
-      animated: violatedTables.has(edge.from),
-      style: {
-        stroke: violatedTables.has(edge.from) ? '#ff4757' : '#64748b',
-        strokeWidth: 2,
-      },
-      labelStyle: {
-        fill: '#94a3b8',
-        fontSize: 10,
-        fontWeight: 500,
-      },
-      labelBgStyle: {
-        fill: '#1e293b',
-        fillOpacity: 0.9,
-      },
-      labelBgPadding: [6, 4] as [number, number],
-      labelBgBorderRadius: 4,
-      type: 'smoothstep',
-    }));
+    const flowEdges: Edge[] = graph.edges.map((edge, i) => {
+      const isCycle     = cycleEdgePairs.has(`${edge.from}|${edge.to}`);
+      const isViolation = violatedTables.has(edge.from);
 
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-      flowNodes,
-      flowEdges
+      const stroke      = isCycle ? '#FF9F0A' : isViolation ? '#FF3B30' : '#007AFF';
+      const strokeWidth = isCycle ? 1.6 : isViolation ? 1.8 : 1.4;
+      const opacity     = isCycle ? 0.38 : isViolation ? 0.80 : 0.65;
+
+      // Short human-readable label for hover tooltip only
+      const label = edge.constraintName
+        .replace(/_fkey$/, '')
+        .replace(/_id$/, '')
+        .replace(/_/g, ' ');
+
+      return {
+        id: `edge-${i}`,
+        source: edge.from,
+        target: edge.to,
+        type: 'custom',
+        animated: isViolation,
+        data: { label },
+        style: {
+          stroke,
+          strokeWidth,
+          strokeDasharray: isCycle ? '6 6' : isViolation ? '5 3' : undefined,
+          opacity,
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: stroke,
+          width: 14,
+          height: 14,
+        },
+      };
+    });
+
+    const { nodes: ln, edges: le } = getLayoutedElements(flowNodes, flowEdges);
+    setNodes(ln);
+    setEdges(le);
+  }, [graph, violatedTables, fkTables, cycleEdgePairs, cycleNodeSet, setNodes, setEdges]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          isSelected:  n.id === selectedNodeId,
+          hasIndexGap: indexGapTables.has(n.id),
+          isCycleNode: cycleNodeSet.has(n.id),
+        },
+      }))
     );
-
-    setNodes(layoutedNodes);
-    setEdges(layoutedEdges);
-  }, [graph, violatedTables, fkTables, setNodes, setEdges]);
+  }, [selectedNodeId, indexGapTables, cycleNodeSet, setNodes]);
 
   const handleNodeClick = useCallback(
-    (_: React.MouseEvent, node: Node) => {
-      onNodeClick?.(node.id);
-    },
+    (_: React.MouseEvent, node: Node) => { onNodeClick?.(node.id); },
     [onNodeClick]
   );
+
+  if (isLoading && !graph) {
+    return (
+      <div className="graph-placeholder">
+        <div className="graph-loading-ring" />
+        <h3>Introspecting schema…</h3>
+        <p>Querying PostgreSQL information_schema</p>
+      </div>
+    );
+  }
 
   if (!graph) {
     return (
       <div className="graph-placeholder">
-        <div className="placeholder-icon">🔗</div>
-        <h3>No Graph Data</h3>
-        <p>Click "Load Graph" to fetch the dependency graph from the database</p>
+        <div className="graph-placeholder-icon">
+          <IconGrid size={22} />
+        </div>
+        <h3>No graph loaded</h3>
+        <p>Click <strong>Load Graph</strong> to visualise FK dependencies</p>
       </div>
     );
   }
@@ -152,27 +189,64 @@ export default function DependencyGraph({ graph, violations, onNodeClick }: Depe
         onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.3}
-        maxZoom={2}
+        fitViewOptions={{ padding: 0.20 }}
+        minZoom={0.20}
+        maxZoom={2.5}
         proOptions={{ hideAttribution: true }}
+        defaultEdgeOptions={{ type: 'custom' }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#334155" />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={24}
+          size={1.3}
+          color="rgba(0,0,0,0.09)"
+        />
         <Controls
           showInteractive={false}
-          style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+          style={{
+            background: 'rgba(255,255,255,0.85)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(0,0,0,0.07)',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.90)',
+          }}
         />
         <MiniMap
           nodeColor={(node) => {
-            const data = node.data as { hasViolation?: boolean; hasForeignKeys?: boolean };
-            if (data?.hasViolation) return '#ff4757';
-            if (data?.hasForeignKeys) return '#ffa502';
-            return '#2ed573';
+            const d = node.data as { hasViolation?: boolean; hasForeignKeys?: boolean };
+            if (d?.hasViolation)   return '#FF3B30';
+            if (d?.hasForeignKeys) return '#FF9F0A';
+            return '#34C759';
           }}
-          style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
-          maskColor="rgba(15, 23, 42, 0.7)"
+          style={{
+            background: 'rgba(255,255,255,0.90)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(0,0,0,0.07)',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.90)',
+          }}
+          maskColor="rgba(235,235,240,0.70)"
         />
+
+        {/* Legend */}
+        <div className="graph-legend">
+          <div className="legend-item">
+            <span className="legend-dot" style={{ background: '#FF3B30' }} />
+            <span>Violation FK</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-dot" style={{ background: '#FF9F0A' }} />
+            <span>Circular FK</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-dot" style={{ background: '#007AFF' }} />
+            <span>Foreign Key</span>
+          </div>
+        </div>
       </ReactFlow>
     </div>
   );
