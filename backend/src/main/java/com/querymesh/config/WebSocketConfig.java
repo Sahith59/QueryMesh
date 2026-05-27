@@ -20,10 +20,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Native WebSocket endpoint (for modern clients/Vite)
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:3000", "http://localhost:3001", "http://localhost:5173");
+                .setAllowedOriginPatterns("*");
 
         registry.addEndpoint("/ws-sockjs")
-                .setAllowedOrigins("http://localhost:3000", "http://localhost:3001", "http://localhost:5173")
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 }

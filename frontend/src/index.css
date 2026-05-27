@@ -6264,3 +6264,188 @@ body {
   transform: translateY(-1px) !important;
 }
 
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE — scales gracefully from 14" MacBook down
+   ══════════════════════════════════════════════════════ */
+
+/* ── ≤ 1400px: hide tagline to free header space ── */
+@media (max-width: 1400px) {
+  .header-tagline,
+  .header-divider {
+    display: none !important;
+  }
+}
+
+/* ── ≤ 1280px: compress stat chips ── */
+@media (max-width: 1280px) {
+  .stat-chip {
+    padding: 4px 12px !important;
+    margin: 0 2px !important;
+  }
+  .stat-chip-num {
+    font-size: 17px !important;
+  }
+  .stat-chip > span:not(.stat-chip-num) {
+    font-size: 7.5px !important;
+  }
+  .header-actions {
+    gap: 6px !important;
+  }
+}
+
+/* ── ≤ 1100px: collapse Tools to icon-only ── */
+@media (max-width: 1100px) {
+  .btn-tools .btn-label {
+    display: none !important;
+  }
+  .btn-tools {
+    padding: 7px !important;
+    width: 34px !important;
+    gap: 0 !important;
+  }
+  /* Compress stat chips further */
+  .stat-chip {
+    padding: 4px 9px !important;
+  }
+}
+
+/* ── ≤ 960px: hide stats, collapse Load Graph to icon ── */
+@media (max-width: 960px) {
+  .header-stats {
+    display: none !important;
+  }
+  .btn-secondary .btn-label {
+    display: none !important;
+  }
+  .btn-secondary {
+    padding: 7px !important;
+    min-width: 32px !important;
+    gap: 0 !important;
+  }
+  /* Side panel: override inline width */
+  .side-panel {
+    width: 260px !important;
+  }
+}
+
+/* ── ≤ 768px: stack layout vertically ── */
+@media (max-width: 768px) {
+  /* Use dvh so mobile browser chrome doesn't clip the app */
+  .app {
+    height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  /* Compact header */
+  .app-header {
+    height: 48px !important;
+    padding: 0 12px !important;
+    gap: 8px !important;
+  }
+  .logo-mark {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .logo-wordmark {
+    font-size: 14px !important;
+  }
+  .header-actions {
+    gap: 5px !important;
+  }
+
+  /* Hide fullscreen + camera on mobile — no space */
+  .btn-fullscreen,
+  .btn-camera {
+    display: none !important;
+  }
+
+  /* Scan Violations: icon only on mobile */
+  .btn-primary .btn-label {
+    display: none !important;
+  }
+  .btn-primary {
+    padding: 7px !important;
+    min-width: 32px !important;
+    gap: 0 !important;
+  }
+
+  /* Demo banner: compact single line */
+  .demo-banner {
+    padding: 5px 12px !important;
+    font-size: 10px !important;
+    gap: 5px !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+  }
+  .demo-banner-connect-btn {
+    margin-left: auto !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Stack graph + side panel vertically */
+  .main-content {
+    flex-direction: column !important;
+  }
+  .graph-section {
+    flex: 1 1 0 !important;
+    min-height: 180px !important;
+  }
+  /* Hide the vertical resize handle */
+  .resize-handle {
+    display: none !important;
+  }
+  /* Side panel: full width, fixed portion of screen height */
+  .side-panel {
+    width: 100% !important;
+    height: 42vh !important;
+    min-height: 150px !important;
+    max-height: 55vh !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Hide bottom diagnose panel — no room on mobile */
+  .bottom-resize-handle,
+  .bottom-panel {
+    display: none !important;
+  }
+}
+
+/* ── ≤ 480px: phone layout ── */
+@media (max-width: 480px) {
+  .logo-wordmark span { display: none !important; } /* hide "Mesh", show just "Query" */
+
+  .demo-banner strong { display: none !important; }
+
+  .side-panel {
+    height: 38vh !important;
+  }
+}
+
+/* ── Tall screens (≥ 1000px height): give graph more room ── */
+@media (min-height: 1000px) {
+  /* Let bottom panel be a bit taller by default */
+  .bottom-panel {
+    min-height: 0 !important;
+  }
+}
+
+/* ── Short screens (≤ 700px height): compress chrome ── */
+@media (max-height: 700px) {
+  .app-header {
+    height: 46px !important;
+  }
+  .demo-banner {
+    padding: 4px 16px !important;
+    font-size: 10px !important;
+  }
+  .bottom-panel {
+    display: none !important;
+  }
+  .bottom-resize-handle {
+    display: none !important;
+  }
+}
+

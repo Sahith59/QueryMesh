@@ -191,7 +191,7 @@ export default function Header({
           transition={{ type: 'spring', stiffness: 420, damping: 26 }}
         >
           <IconWrench size={13} />
-          Tools
+          <span className="btn-label">Tools</span>
         </motion.button>
 
         <motion.button
@@ -203,9 +203,9 @@ export default function Header({
           transition={{ type: 'spring', stiffness: 420, damping: 26 }}
         >
           {isLoading ? (
-            <><span className="spinner spinner-dark" />Loading...</>
+            <><span className="spinner spinner-dark" /><span className="btn-label">Loading...</span></>
           ) : (
-            <><IconRefresh size={13} />{graphLoaded ? 'Refresh' : 'Load Graph'}</>
+            <><IconRefresh size={13} /><span className="btn-label">{graphLoaded ? 'Refresh' : 'Load Graph'}</span></>
           )}
         </motion.button>
 
@@ -218,9 +218,9 @@ export default function Header({
           transition={{ type: 'spring', stiffness: 420, damping: 26 }}
         >
           {isScanning ? (
-            <><span className="spinner" />Scanning...</>
+            <><span className="spinner" /><span className="btn-label">Scanning...</span></>
           ) : (
-            <><IconScan size={13} />Scan Violations</>
+            <><IconScan size={13} /><span className="btn-label">Scan Violations</span></>
           )}
         </motion.button>
       </div>

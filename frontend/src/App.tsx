@@ -46,8 +46,18 @@ function App() {
   const [isToolsOpen, setIsToolsOpen] = useState(false);
   const [isConnectOpen, setIsConnectOpen] = useState(false);
   const [toolsInitialTab, setToolsInitialTab] = useState<'deletion-order' | 'schema-drift'>('deletion-order');
-  const [sidePanelWidth, setSidePanelWidth] = useState(340);
-  const [bottomPanelHeight, setBottomPanelHeight] = useState(220);
+  const [sidePanelWidth, setSidePanelWidth] = useState(() => {
+    const w = window.innerWidth;
+    if (w < 960) return 260;
+    if (w < 1280) return 300;
+    return 340;
+  });
+  const [bottomPanelHeight, setBottomPanelHeight] = useState(() => {
+    const h = window.innerHeight;
+    if (h < 800) return 160;
+    if (h < 900) return 190;
+    return 220;
+  });
   const stompClientRef = useRef<Client | null>(null);
   const diagnosePanelRef = useRef<HTMLDivElement>(null);
 
@@ -124,7 +134,7 @@ function App() {
     document.body.style.userSelect = 'none';
     const onMove = (ev: MouseEvent) => {
       const delta = startX - ev.clientX;
-      setSidePanelWidth(Math.max(260, Math.min(520, startWidth + delta)));
+      setSidePanelWidth(Math.max(220, Math.min(520, startWidth + delta)));
     };
     const onUp = () => {
       document.body.style.cursor = '';

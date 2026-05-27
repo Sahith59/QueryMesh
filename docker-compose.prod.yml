@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: qm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: querymesh_demo
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: demo
+    # No external port — only accessible inside Docker network
+    volumes:
+      - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: qm-backend
+    restart: unless-stopped
+    # No external port — nginx proxies through frontend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/querymesh_demo
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: demo
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: qm-frontend
+    restart: unless-stopped
+    # Bind to 127.0.0.1 — only host nginx can reach it
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
