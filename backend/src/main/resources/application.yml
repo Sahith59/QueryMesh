@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/querymesh_demo
-    username: postgres
-    password: demo
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/querymesh_demo}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:demo}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

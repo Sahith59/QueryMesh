@@ -10,7 +10,7 @@ export function createStompClient(
 ): Client {
   const client = new Client({
     // SockJS handles WebSocket upgrade + polling fallback automatically
-    webSocketFactory: () => new SockJS('http://localhost:8080/ws-sockjs'),
+    webSocketFactory: () => new SockJS((import.meta.env.VITE_API_URL ?? 'http://localhost:8080') + '/ws-sockjs'),
     reconnectDelay: 5000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
