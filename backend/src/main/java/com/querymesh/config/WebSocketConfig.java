@@ -20,10 +20,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Native WebSocket endpoint (for modern clients/Vite)
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*");
+                .setAllowedOriginPatterns("http://localhost:*", "https://query-mesh-brown.vercel.app", "https://*.vercel.app");
 
         registry.addEndpoint("/ws-sockjs")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOriginPatterns("http://localhost:*", "https://query-mesh-brown.vercel.app", "https://*.vercel.app")
                 .withSockJS();
     }
 }
